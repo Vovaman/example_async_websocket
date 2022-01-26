@@ -78,16 +78,16 @@ So, controller will immediatly connect to server using some random client id:
 ## Postman
 Add one more client to our websocket server using [Postman](https://www.postman.com/).  
 Install it and run. Create new websocket connection: run command `File --> New...` and choose `WebSocket Request`:  
-![ws](ing/postman_new_ws.png)
+![ws](img/postman_new_ws.png)
 
 Enter address in address field and press `Connect`:  
-![ws](ing/postman_arrd.png)
+![ws](img/postman_arrd.png)
 
 You'll see such result:  
-![ws](ing/postman_conn.png)
+![ws](img/postman_conn.png)
 
 So, let's send some message from Postman: write some text in message area and press `Send` button:
-![run](ing/running.png)
+![run](img/running.png)
 
 # Conclusion
 All our components are running. ESP32 do his job and stand connected to server, server recieve messages and broadcast them to all clients.  
@@ -111,10 +111,10 @@ All our components are running. ESP32 do his job and stand connected to server, 
     "socket_delay_ms": 5                     # delay for read/write operations on socket. if you have slow wifi network, try to increase this delay
 }
 ```
-## uvicorn parameters for ping/pong
-Ping/pong is exchange of special messages between server and client to keep alive data channel.  
-Parameters for ping/pong are initiated in command line for test server starting: `--ws-ping-interval 10 --ws-ping-timeout 10`.  
-If you will decrease this parameters, delay for socket disconnection will be smaller, but ping/pong signal will be sent more quickly and
+## uvicorn parameters for pimg/pong
+Pimg/pong is exchange of special messages between server and client to keep alive data channel.  
+Parameters for pimg/pong are initiated in command line for test server starting: `--ws-ping-interval 10 --ws-ping-timeout 10`.  
+If you will decrease this parameters, delay for socket disconnection will be smaller, but pimg/pong signal will be sent more quickly and
 workload of ESP32 can extremely increase.  
 > :warning: Keep in mind: due to uvicorn parameters `--ws-ping-interval 10 --ws-ping-timeout 10` 
 > websocket channel will be closed after 20 seconds approximately after 
