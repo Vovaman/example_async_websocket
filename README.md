@@ -81,7 +81,7 @@ Install it and run. Create new websocket connection: run command `File --> New..
 ![ws](img/postman_new_ws.png)
 
 Enter address in address field and press `Connect`:  
-![ws](img/postman_arrd.png)
+![ws](img/postman_addr.png)
 
 You'll see such result:  
 ![ws](img/postman_conn.png)
