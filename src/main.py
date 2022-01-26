@@ -7,23 +7,24 @@ import gc
 
 from async_websocket_client import AsyncWebsocketClient
 
+# trying to read config --------------------------------------------------------
+# if config file format is wrong, exception is raised and program will stop
 f = open("config.json")
 text = f.read()
 f.close()
-
-# exception will be raised in case of wrong config
 config = json.loads(text)
-
 del text
+# ------------------------------------------------------------------------------
 
 # create instance of websocket
 ws = AsyncWebsocketClient(config['socket_delay_ms'])
 
-# this lock will be used for data interchange between loops
+# this lock will be used for data interchange between loops --------------------
+# better choice is to use uasynio.queue, but it is not documented yet
 lock = a.Lock()
-
 # this array stores messages from server
 data_from_ws = []
+# ------------------------------------------------------------------------------
 
 # SSID - network name
 # pwd - password
@@ -49,8 +50,9 @@ async def wifi_connect(SSID: str, pwd: str, attempts: int = 3, delay_in_msec: in
 
     return wifi
 
-# -- It make sense for ESP32 with integrated LED on Pin2. 
-# -- Write another function for main loop for other controller types.
+# Function for main control loop.
+# It makes sense for ESP32 with integrated LED on Pin2. 
+# Write another function for main loop for other controller types.
 p2 = Pin(2, Pin.OUT)
 async def blink_sos():
     global p2
@@ -72,13 +74,14 @@ async def blink_sos():
     await blink(200, 50)    
     
 # ------------------------------------------------------
-# Task for main loop: blink and send data to server.
+# Main loop function: blink and send data to server.
 # This code emulates main control cycle for controller.
 async def blink_loop():
     global lock
     global data_from_ws
     global ws
 
+    # Main "work" cycle. It should be awaitable as possible.
     while True:
         await blink_sos()
         if ws is not None:
@@ -86,6 +89,7 @@ async def blink_loop():
                 await ws.send('SOS!')                
             print("SOS!", end=' ')
 
+            # lock data archive
             await lock.acquire()
             if data_from_ws:
                 for item in data_from_ws:
@@ -95,6 +99,8 @@ async def blink_loop():
             gc.collect()
 
         await a.sleep_ms(400)
+# ------------------------------------------------------
+
 
 # ------------------------------------------------------
 # Task for read loop
@@ -103,6 +109,7 @@ async def read_loop():
     global lock
     global data_from_ws
 
+    # may be, it 
     wifi = await wifi_connect(config["wifi"]["SSID"], config["wifi"]["password"])
     while True:
         gc.collect()
