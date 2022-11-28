@@ -3,8 +3,11 @@
         "SSID": "SSID",
         "password": "***********",
         "attempts": 3,
-        "delay_in_msec": 200     
+        "delay_in_msec": 200
     },
-    "server": "ws://192.168.1.100:8000/",
+    "secrity": {
+        "on": false
+    },
+    "server": "ws://192.168.1.100:80/",
     "socket_delay_ms": 5
 }

@@ -1,0 +1,22 @@
+{
+    "listeners": {
+        "*:80": {
+            "pass": "applications/fastapi"
+        },
+        "*:443": {
+            "pass": "applications/fastapi",
+            "tls": {
+                "certificate": "WSSServer"
+            }
+        }
+    },
+
+    "applications": {
+        "fastapi": {
+            "type": "python 3.10",
+            "path": "/www",
+            "module": "server",
+            "callable": "app"
+        }
+    }
+}

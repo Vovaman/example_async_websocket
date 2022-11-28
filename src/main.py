@@ -35,7 +35,7 @@ async def wifi_connect(SSID: str, pwd: str, attempts: int = 3, delay_in_msec: in
 
     wifi.active(1)
     count = 1
-    
+
     while not wifi.isconnected() and count <= attempts:
         print("WiFi connecting. Attempt {}.".format(count))
         if wifi.status() != net.STAT_CONNECTING:
@@ -51,7 +51,7 @@ async def wifi_connect(SSID: str, pwd: str, attempts: int = 3, delay_in_msec: in
     return wifi
 
 # Function for main control loop.
-# It makes sense for ESP32 with integrated LED on Pin2. 
+# It makes sense for ESP32 with integrated LED on Pin2.
 # Write another function for main loop for other controller types.
 p2 = Pin(2, Pin.OUT)
 async def blink_sos():
@@ -71,8 +71,8 @@ async def blink_sos():
     await blink(400, 50)
     await blink(200, 50)
     await blink(200, 50)
-    await blink(200, 50)    
-    
+    await blink(200, 50)
+
 # ------------------------------------------------------
 # Main loop function: blink and send data to server.
 # This code emulates main control cycle for controller.
@@ -86,7 +86,7 @@ async def blink_loop():
         await blink_sos()
         if ws is not None:
             if await ws.open():
-                await ws.send('SOS!')                
+                await ws.send('SOS!')
             print("SOS!", end=' ')
 
             # lock data archive
@@ -94,7 +94,7 @@ async def blink_loop():
             if data_from_ws:
                 for item in data_from_ws:
                     print("\nData from ws: {}".format(item))
-                data_from_ws = []                
+                data_from_ws = []
             lock.release()
             gc.collect()
 
@@ -109,14 +109,14 @@ async def read_loop():
     global lock
     global data_from_ws
 
-    # may be, it 
+    # may be, it
     wifi = await wifi_connect(config["wifi"]["SSID"], config["wifi"]["password"])
     while True:
         gc.collect()
         if not wifi.isconnected():
             wifi = await wifi_connect(config["wifi"]["SSID"], config["wifi"]["password"])
             if not wifi.isconnected():
-                continue            
+                continue
         try:
             # connect to test socket server with random client number
             if not await ws.handshake("{}{}".format(config["server"], randint(1, 100))):
@@ -133,9 +133,9 @@ async def read_loop():
             await a.sleep(1)
 # ------------------------------------------------------
 
-async def main():    
+async def main():
 
     tasks = [read_loop(), blink_loop()]
     await a.gather(*tasks)
-    
+
 a.run(main())

@@ -1,0 +1,17 @@
+{
+    "listeners": {
+        "*:80": {
+            "pass": "applications/fastapi"
+        }
+    },
+
+    "applications": {
+        "fastapi": {
+            "type": "python 3.10",
+            "path": "/home/vovaman/work/projects/example_async_websocket",
+            "home": "/home/vovaman/work/projects/example_async_websocket/venv/",
+            "module": "asgi",
+            "callable": "app"
+        }
+    }
+}
