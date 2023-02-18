@@ -8,6 +8,9 @@ micropy-cli = "*"
 esptool = "*"
 fastapi = "*"
 websockets = "*"
+mpremote = "*"
+uvicorn = "*"
+mpy-cross = "*"
 
 [dev-packages]
 

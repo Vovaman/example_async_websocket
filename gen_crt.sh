@@ -27,10 +27,10 @@ DAYS=3654
 TLS_DIR="./tls"
 
 # Store for center authority (CA) root certificate
-ROOT_DIR="./tls/root"
+ROOT_DIR="./tls/rootCA"
 
 # Path to server's certificate
-SRV_DIR="./tls/server"
+SRV_DIR="./tls/"
 
 # Path to client's certificate
 CLIENT_DIR="./tls/client"
@@ -40,6 +40,9 @@ ROOT_CA_KEY="${ROOT_DIR}/rootCA.key"
 
 # CA root certificate name
 ROOT_CA_CRT="${ROOT_DIR}/rootCA.crt"
+
+# key long
+KEY_LENGTH=4096
 
 # Data
 #COUNTRY="RU"  # Country Name
@@ -56,6 +59,10 @@ while [[ "$1" != "" ]]; do
     case ${PARAM} in
         --srv)
             SRV_NAME=${VALUE}
+            SRV_DIR=${SRV_DIR}${SRV_NAME}
+            ;;
+        --kl)
+            KEY_LENGTH=${VALUE}
             ;;
         *)
             echo "ERROR: unknown parameter \"${PARAM}\""
@@ -92,7 +99,7 @@ fi
 if [[ ! -f ${ROOT_CA_KEY} ]]
 then
     echo "Create root certificate and key..."
-    openssl req -new -newkey rsa:4096 -nodes -keyout ${ROOT_CA_KEY} \
+    openssl req -new -newkey rsa:${KEY_LENGTH} -nodes -keyout ${ROOT_CA_KEY} \
      -x509 -days ${DAYS} -out ${ROOT_CA_CRT} \
      -subj "/CN=root_ca_center"
 fi
@@ -103,7 +110,7 @@ SRV_CSR=${SRV_DIR}/${SRV_NAME}.csr
 SRV_BUNDLE=${SRV_DIR}/${SRV_NAME}.pem
 
 echo "Create private key for server certificate..."
-openssl genrsa -out ${SRV_KEY} 4096
+openssl genrsa -out ${SRV_KEY} ${KEY_LENGTH}
 
 echo "Create request"
 openssl req -sha256 -new -key ${SRV_KEY} -out ${SRV_CSR} \
@@ -117,7 +124,7 @@ echo "Create bundle: server_cert + server_key"
 cat ${SRV_CERT} ${SRV_KEY} > ${SRV_BUNDLE}
 
 echo "Create client private key"
-openssl genrsa -out ${CLIENT_DIR}/client.key 4096
+openssl genrsa -out ${CLIENT_DIR}/client.key ${KEY_LENGTH}
 
 echo "Create CSR for client. Attention: name of client is 'first_client'"
 openssl req -new -key ${CLIENT_DIR}/client.key -out ${CLIENT_DIR}/client.csr \
