@@ -7,10 +7,12 @@ name = "pypi"
 micropy-cli = "*"
 esptool = "*"
 fastapi = "*"
-uvicorn = "*"
 websockets = "*"
+mpremote = "*"
+uvicorn = "*"
+mpy-cross = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.9"
+python_version = "3.10"

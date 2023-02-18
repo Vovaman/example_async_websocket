@@ -13,7 +13,7 @@ app = FastAPI()
 
 @app.websocket("/{id}")
 async def websocket_endpoint(websocket: WebSocket, id: int):
-    
+
     try:
         if id in app.wss.keys():
             await websocket.close(code=status.WS_1001_GOING_AWAY)
@@ -23,7 +23,7 @@ async def websocket_endpoint(websocket: WebSocket, id: int):
         await websocket.accept()
         app.wss[id] = websocket
 
-        app.logger.info("New websocket client: {}".format(id))
+        app.logger.info("New websocket client: {}; client: {}".format(id, websocket.headers.get("X-SSL-Client")))
 
         while True:
             data = await websocket.receive_text()
@@ -33,8 +33,8 @@ async def websocket_endpoint(websocket: WebSocket, id: int):
                 if client == id:
                     continue
                 await ws.send_text("Mes from {}: {}".format(id, data))
-                app.logger.info("Data {} have been sent to {}.".format(data, client))                        
-            
+                app.logger.info("Data {} have been sent to {}.".format(data, client))
+
     except Exception as ex:
         app.logger.info("Client {} is disconnected: {}".format(id, ex))
         app.wss.pop(id, None)
@@ -69,4 +69,3 @@ async def shutdown():
     #    await ws.close()
 
     app.logger.info("Server stopped.")
-
