@@ -149,7 +149,7 @@ So, let's send some message from Postman: write some text in message area and pr
     "socket_delay_ms": 5                     # delay for read/write operations on socket. if you have slow wifi network, try to increase this delay
 }
 ```
-## uvicorn parameters for pimg/pong
+## uvicorn parameters for ping/pong
 Pimg/pong is exchange of special messages between server and client to keep alive data channel.
 Parameters for pimg/pong are initiated in command line for test server starting: `--ws-ping-interval 10 --ws-ping-timeout 10`.
 If you will decrease this parameters, delay for socket disconnection will be smaller, but pimg/pong signal will be sent more quickly and
