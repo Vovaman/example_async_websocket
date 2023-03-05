@@ -129,12 +129,22 @@ async def read_loop():
             if not await ws.handshake("{}{}".format(config["server"], randint(1, 100))):
                 raise Exception('Handshake error.')
             print("...handshaked.")
+
+            mes_count = 0
             while await ws.open():
                 data = await ws.recv()
+                print("Data: " + str(data) + "; " + str(mes_count))
+                # close socket for every 10 messages (even ping/pong)
+                if mes_count == 10:
+                    await ws.close()
+                    print("ws is open: " + str(await ws.open()))
+                mes_count += 1
+
                 if data is not None:
                     await lock.acquire()
                     data_from_ws.append(data)
                     lock.release()
+
                 await a.sleep_ms(50)
         except Exception as ex:
             print("Exception: {}".format(ex))

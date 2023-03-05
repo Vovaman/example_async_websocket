@@ -1,10 +1,10 @@
 {
     "wifi": {
-        "SSID": "wifi SSID",
-        "password": "wifi pwd",
+        "SSID": "Vovaman",
+        "password": "(*Byakovo73*)",
         "attempts": 3,
         "delay_in_msec": 200
     },
-    "server": "ws://<your server ip>:8000/",
+    "server": "ws://192.168.1.75:8000/",
     "socket_delay_ms": 5
 }
