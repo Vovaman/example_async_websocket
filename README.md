@@ -51,8 +51,13 @@ This command will create python-environment and install all necessary packages (
 Upload firmware with micropython to your controller or use
 `esp32-20220618-v1.19.1.bin` file in this project.
 
-# Start project. WS protocol
-## Prepare config files
+# Start project
+
+> :warning: Pay attention: the connection will be rejected by client
+> every ten cycle to demonstrate re-handshaking.
+
+## WS protocol
+### Prepare config files
 1. Define IP address of your host by running the command in terminal:
    ```bash
    $ ip a
@@ -61,15 +66,15 @@ Upload firmware with micropython to your controller or use
    Find wifi driver in this list and IP address inside it configuration:
    ![wifi](img/wifi.png)
 3. Open `src/config.json` and edit parameters for wifi network and `server` parameter: insert IP-address defined at previous step. Save the file.
-## Upload project to ESP32
+### Upload project to ESP32
 Upload project to your controller using `Pymakr`.
 > :warning: We will install `micropython-async-websocket-client`
 > at the next step, because `Pymakr` refresh file system on controller
 > while installing project.
-## Install micropython-async-websocket-client
+### Install micropython-async-websocket-client
 Install into controller `micropython-async-websocket-client` as explained in https://pypi.org/project/micropython-async-websocket-client/.
 Restart controller. It will start to blink blue LED.
-## Run test websocket server
+### Run test websocket server
 Open new terminal in VSCode, enter to project environment (if VSCode didn't do it for you) and run test server:
 ```bash
 $ uvicorn server:app --reload --workers 1 --host 0.0.0.0 --port 8000 --ws-ping-interval 10 --ws-ping-timeout 10 --log-level info
@@ -80,11 +85,11 @@ $ uvicorn server:app --reload --workers 1 --host 0.0.0.0 --port 8000 --ws-ping-i
 So, controller will immediatly connect to server using some random client id:
 ![work](img/work.png)
 
-# Start project. WSS protocol
+## WSS protocol
 > :warning: There is no certificates validation now.
 > So, this is why security is partial.
 > Waiting for new micropython's release.
-## Prepare config files
+### Prepare config files
 1. Define IP address of your host by running the command in terminal:
    ```bash
    $ ip a
@@ -96,18 +101,18 @@ So, controller will immediatly connect to server using some random client id:
 `server` parameter has to be like `wss://<server_ip>:8443/`.
 Check for: `wss`, port number and slash at the end.
 Save the file.
-## Upload project to ESP32
+### Upload project to ESP32
 Upload project to your controller using `Pymakr`.
 > :warning: We will install `micropython-async-websocket-client`
 > at the next step, because `Pymakr` refresh file system on controller
 > while installing project.
-## Install micropython-async-websocket-client
+### Install micropython-async-websocket-client
 Install into controller `micropython-async-websocket-client` as explained in https://pypi.org/project/micropython-async-websocket-client/.
 Restart controller. It will start to blink blue LED.
-## Generate certificates
+### Generate certificates
 Run `gen_crt.sh`. It will create `tls` folder with certificates.
 We need just two files: `server.key` and `server.crt`.
-## Run test websocket server
+### Run test websocket server
 Open new terminal in VSCode, enter to project environment (if VSCode didn't do it for you) and run test server:
 ```bash
 $ uvicorn server:app --reload --workers 1 --host 0.0.0.0 --port 8443 --ws-ping-interval 10 --ws-ping-timeout 10 --log-level info --ssl-keyfile=./tls/server.key --ssl-certfile=./tls/server.crt
