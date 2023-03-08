@@ -17,6 +17,7 @@ Main ideas of referenced above package are:
 - Python 3.10
 - VSCode
 - WiFi network
+
 Project https://github.com/Vovaman/start_ESP32_with_micropython explains how to start.
 
 > :warning: Use only deb-distributed version of VSCode!
@@ -30,7 +31,7 @@ If client with `client_id` is already connected then this request will be reject
 In other case a new websocket channel will be created with client `client_id`.
 When client send some message to server then it is broadcasted to all other clients.
 ## ESP32 test project
-`src` folder contains 2 files for test ESP32 project.
+`src` folder contains files for test ESP32 project.
 Project's functionality consists of two independent tasks:
 - loop with LED blinking and sending SOS message to server
 - loop for reading data from server.
