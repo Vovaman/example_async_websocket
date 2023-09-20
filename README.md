@@ -156,9 +156,9 @@ So, let's send some message from Postman: write some text in message area and pr
 }
 ```
 ## uvicorn parameters for ping/pong
-Pimg/pong is exchange of special messages between server and client to keep alive data channel.
-Parameters for pimg/pong are initiated in command line for test server starting: `--ws-ping-interval 10 --ws-ping-timeout 10`.
-If you will decrease this parameters, delay for socket disconnection will be smaller, but pimg/pong signal will be sent more quickly and
+Ping/pong is exchange of special messages between server and client to keep alive data channel.
+Parameters for ping/pong are initiated in command line for test server starting: `--ws-ping-interval 10 --ws-ping-timeout 10`.
+If you will decrease this parameters, delay for socket disconnection will be smaller, but ping/pong signal will be sent more quickly and
 workload of ESP32 can extremely increase.
 > :warning: Keep in mind: due to uvicorn parameters `--ws-ping-interval 10 --ws-ping-timeout 10`
 > websocket channel will be closed after 20 seconds approximately after
