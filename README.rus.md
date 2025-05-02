@@ -18,6 +18,7 @@
 - Python 3.10
 - VSCode
 - сеть WiFi
+
 Проект https://github.com/Vovaman/start_ESP32_with_micropython объясняет,
 как начать работу с ESP32, micropython'ом и VSCode.
 

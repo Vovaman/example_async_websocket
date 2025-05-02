@@ -10,7 +10,6 @@ fastapi = "*"
 websockets = "*"
 mpremote = "*"
 uvicorn = "*"
-mpy-cross = "*"
 
 [dev-packages]
 

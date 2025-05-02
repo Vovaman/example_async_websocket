@@ -1,5 +1,5 @@
 import network as net
-import uasyncio as a
+import asyncio as a
 import json
 from random import randint
 from machine import Pin
