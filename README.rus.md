@@ -14,15 +14,18 @@
 # Требования
 - ESP32 контроллер
 - USB кабель с проводом для передачи данных
-- Ubuntu 22.04
+- Ubuntu 24.04
 - Python 3.10
 - VSCode
 - сеть WiFi
 
-Проект https://github.com/Vovaman/start_ESP32_with_micropython объясняет,
-как начать работу с ESP32, micropython'ом и VSCode.
+> [!NOTE]
+> Проект https://github.com/Vovaman/start_ESP32_with_micropython объясняет,
+> как работать с ESP32 из VSCode.
+> Копирование файлов, синхронизация проекта и т.д. - все операции описаны в указанном проекте.
 
-> :warning: Используйте только  deb-установку VSCode!
+> [!CAUTION]
+> Используйте только  deb-установку VSCode!
 > В версии для `snap` не работает расширение `Pymakr`!
 
 # Компоненты тестового проекта
@@ -131,7 +134,7 @@ $ uvicorn server:app --reload --workers 1 --host 0.0.0.0 --port 8000 --ws-ping-i
 Откройте новый терминал в VSCode, войдите в окружение проекта,
 если VSCode не сделал это автоматически и запустите сервер:
 ```bash
-$ uvicorn server:app --reload --workers 1 --host 0.0.0.0 --port 8443 --ws-ping-interval 10 --ws-ping-timeout 10 --log-level info --ssl-keyfile=./tls/server.key --ssl-certfile=./tls/server.crt
+$ uvicorn server:app --reload --workers 1 --host 0.0.0.0 --port 8443 --ws-ping-interval 10 --ws-ping-timeout 10 --log-level info --ssl-keyfile=./tls/server.key --ssl-certfile=./tls/server.crt --ssl-ca-certs=ca-cert.pem
 ```
 > :warning: Обратите внимание, что сервер будет работать на 8443 порту!
 > Этот порт вписан в файле `src/config.json`, в параметр `server`.

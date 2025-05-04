@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # coding: utf-8
 #
-# $ sudo gen_crt.sh --srv=<your_server_name>
+# $ ./gen_crt.sh --srv="IP or host name" --kl=<key length> --cn="client CN"
+#
+# --srv - default value is current hostname
+# --kl - default value is 4096
+# --cn - default value is result of command 'uuidgen'
 #
 # script generates certificates, arranging them in directory structure:
 # tls
@@ -18,7 +22,7 @@
 #
 
 # Server Name
-SRV_NAME="server"
+SRV_NAME=$HOSTNAME
 
 # Certificate validity period (10 years)
 DAYS=3654
@@ -32,26 +36,25 @@ ROOT_DIR="./tls/rootCA"
 # Path to server's certificate
 SRV_DIR="./tls/"
 
-# Path to client's certificate
-CLIENT_DIR="./tls/client"
+# Path to clients directory
+CLIENTS_DIR="./tls/clients"
+
+# Client name
+CLIENT_NAME=$(uuidgen)
+# Path to client certificate
+CLIENT_DIR="${CLIENTS_DIR}/${CLIENT_NAME}"
 
 # CA root key name
 ROOT_CA_KEY="${ROOT_DIR}/rootCA.key"
 
 # CA root certificate name
-ROOT_CA_CRT="${ROOT_DIR}/rootCA.crt"
+ROOT_CA_CRT="${ROOT_DIR}/rootCA.crt.der"
+ROOT_CA_CRT_PEM="${ROOT_DIR}/rootCA.crt.pem"
 
 # key long
 KEY_LENGTH=4096
 
-# Data
-#COUNTRY="RU"  # Country Name
-#STATE="Moscow"  # State or Province
-#LOCALITY="Moscow"  # Locality Name
-#ORG="Ostec-SMT"  # Organization Name
-#OU="IT-Dept"  # Organizational Unit Name
-#CN="ostec-ca-server"  # Common Name
-#EMAIL="support@example.com"  # Email Address
+regex='^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
 
 while [[ "$1" != "" ]]; do
     PARAM=`echo $1 | awk -F= '{print $1}'`
@@ -63,6 +66,10 @@ while [[ "$1" != "" ]]; do
             ;;
         --kl)
             KEY_LENGTH=${VALUE}
+            ;;
+        --cn)
+            CLIENT_NAME=${VALUE}
+            CLIENT_DIR=${CLIENTS_DIR}/${CLIENT_NAME}
             ;;
         *)
             echo "ERROR: unknown parameter \"${PARAM}\""
@@ -90,18 +97,23 @@ then
     mkdir ${SRV_DIR}
 fi
 
-# create tls/client
-if [[ ! -d ${CLIENT_DIR} ]]
+# create tls/clients
+if [[ ! -d ${CLIENTS_DIR} ]]
 then
-    mkdir ${CLIENT_DIR}
+    mkdir ${CLIENTS_DIR}
 fi
 
 if [[ ! -f ${ROOT_CA_KEY} ]]
 then
     echo "Create root certificate and key..."
-    openssl req -new -newkey rsa:${KEY_LENGTH} -nodes -keyout ${ROOT_CA_KEY} \
-     -x509 -days ${DAYS} -out ${ROOT_CA_CRT} \
-     -subj "/CN=root_ca_center"
+    # DER certificate is for using in controller,
+    # current version of firmware (1.25.0) use only DER format
+    openssl req -new -newkey rsa:${KEY_LENGTH} -keyout ${ROOT_CA_KEY} \
+    -x509 -days ${DAYS} -outform DER -out ${ROOT_CA_CRT} \
+    -subj "/CN=root_ca_center"
+
+    # ...and uvicorn uses only PEM
+    openssl x509 -inform der -in ${ROOT_CA_CRT} -out ${ROOT_CA_CRT_PEM}
 fi
 
 SRV_KEY=${SRV_DIR}/${SRV_NAME}.key
@@ -117,20 +129,38 @@ openssl req -sha256 -new -key ${SRV_KEY} -out ${SRV_CSR} \
         -subj "/CN=${SRV_NAME}"
 
 echo "Sign the CSR by own root CA certificate"
-openssl x509 -req -in ${SRV_CSR} -CA ${ROOT_CA_CRT} -CAkey ${ROOT_CA_KEY} \
-    -CAcreateserial -out ${SRV_CERT} -days ${DAYS}
+if [[ ${SRV_NAME} =~ $regex ]]; then
+    # srv_name is ip4
+    echo -e "authorityKeyIdentifier=keyid,issuer\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nsubjectAltName=${SRV_NAME}" > server.ext
+    openssl x509 ${SRV_CSR} -CA ${ROOT_CA_CRT} -CAkey ${ROOT_CA_KEY} \
+        -CAcreateserial -out ${SRV_CERT} -days ${DAYS} -extfile server.ext
+else
+    openssl x509 -req -in ${SRV_CSR} -CA ${ROOT_CA_CRT} -CAkey ${ROOT_CA_KEY} \
+        -CAcreateserial -out ${SRV_CERT} -days ${DAYS}
+fi
 
 echo "Create bundle: server_cert + server_key"
 cat ${SRV_CERT} ${SRV_KEY} > ${SRV_BUNDLE}
 
-echo "Create client private key"
-openssl genrsa -out ${CLIENT_DIR}/client.key ${KEY_LENGTH}
+# create tls/client
+if [[ ! -d ${CLIENT_DIR} ]]
+then
+    mkdir "${CLIENT_DIR}"
+fi
 
-echo "Create CSR for client. Attention: name of client is 'first_client'"
-openssl req -new -key ${CLIENT_DIR}/client.key -out ${CLIENT_DIR}/client.csr \
-    -subj "/CN=first_client"
+echo "Create client private key"
+openssl genrsa -out "${CLIENT_DIR}/${CLIENT_NAME}.key" ${KEY_LENGTH}
+
+echo "Create CSR for client. Attention: name of client is '${CLIENT_NAME}'"
+openssl req -new -key "${CLIENT_DIR}/${CLIENT_NAME}.key" -out "${CLIENT_DIR}/${CLIENT_NAME}.csr" \
+    -subj "/CN=${CLIENT_NAME}"
 
 echo "Create client certificate"
-openssl x509 -req -in ${CLIENT_DIR}/client.csr \
+openssl x509 -req -in "${CLIENT_DIR}/${CLIENT_NAME}.csr" \
     -CA ${ROOT_CA_CRT} -CAkey ${ROOT_CA_KEY} -CAcreateserial \
-    -out ${CLIENT_DIR}/client.crt -days ${DAYS}
+    -out "${CLIENT_DIR}/${CLIENT_NAME}.crt" -days ${DAYS}
+
+echo "Copy certificates to project catalog"
+cp "${CLIENT_DIR}/${CLIENT_NAME}.key" src/
+cp "${CLIENT_DIR}/${CLIENT_NAME}.crt" src/
+cp "${ROOT_CA_CRT}" src/

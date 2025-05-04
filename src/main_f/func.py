@@ -5,7 +5,7 @@ from random import randint
 from machine import Pin
 import gc
 
-from async_websocket_client import AsyncWebsocketClient
+from ws import AsyncWebsocketClient
 
 # trying to read config --------------------------------------------------------
 # if config file format is wrong, exception is raised and program will stop
@@ -126,7 +126,14 @@ async def read_loop():
         try:
             print("Handshaking...")
             # connect to test socket server with random client number
-            if not await ws.handshake("{}{}".format(config["server"], randint(1, 100))):
+            # if protocol is wss, get certificate from config
+            kw = {}
+            if config["server"].startswith("wss"):
+                kw["keyfile"] = config["ssl"]["key"]
+                kw["certfile"] = config["ssl"]["cert"]
+                kw["cafile"] = config["ssl"]["ca"]
+
+            if not await ws.handshake("{}{}".format(config["server"], randint(1, 100)), **kw):
                 raise Exception('Handshake error.')
             print("...handshaked.")
 

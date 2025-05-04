@@ -31,6 +31,7 @@ async def websocket_endpoint(websocket: WebSocket, id: int):
 
             for client, ws in app.wss.items():
                 if client == id:
+                    await ws.send_text("Server got your message!")
                     continue
                 await ws.send_text("Mes from {}: {}".format(id, data))
                 app.logger.info("Data {} have been sent to {}.".format(data, client))

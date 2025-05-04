@@ -1,4 +1,4 @@
-import uasyncio as a
+import asyncio as a
 from main_f import read_loop, blink_loop
 
 async def main():
