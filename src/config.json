@@ -5,11 +5,6 @@
         "attempts": 3,
         "delay_in_msec": 200
     },
-    "server": "wss://192.168.1.76:8443/",
-    "ssl": {
-        "cert": "client1.crt",
-        "key": "client1.key",
-        "ca": "ca.der"
-    },
+    "server": "ws://192.168.1.76:8000/",
     "socket_delay_ms": 5
 }
