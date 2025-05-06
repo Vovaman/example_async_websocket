@@ -6,10 +6,8 @@ name = "pypi"
 [packages]
 micropy-cli = "*"
 esptool = "*"
-fastapi = "*"
 websockets = "*"
 mpremote = "*"
-uvicorn = "*"
 
 [dev-packages]
 

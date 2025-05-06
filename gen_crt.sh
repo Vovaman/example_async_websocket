@@ -7,11 +7,12 @@
 # --kl - default value is 4096
 # --cn - default value is result of command 'uuidgen'
 #
-# script generates certificates, arranging them in directory structure:
+# script generates certific     ates, arranging them in directory structure:
 # tls
-#  - root
-#      - rootCA.crt  # root certificate for certificates authority center
-#      - rootCA.key  # private key for root certificate
+#  - ca
+#      - ca.crt  # root certificate for certificates authority center
+#      - ca.der  # root certificate for certificates authority center in DER format
+#      - ca.key  # private key for root certificate
 #  - server
 #      - <server_name>.crt   # server's certificate
 #      - <server_name>.key   # private key for server's certificate
@@ -31,7 +32,7 @@ DAYS=3654
 TLS_DIR="./tls"
 
 # Store for center authority (CA) root certificate
-ROOT_DIR="./tls/rootCA"
+ROOT_DIR="./tls/ca"
 
 # Path to server's certificate
 SRV_DIR="./tls/"
@@ -45,11 +46,11 @@ CLIENT_NAME=$(uuidgen)
 CLIENT_DIR="${CLIENTS_DIR}/${CLIENT_NAME}"
 
 # CA root key name
-ROOT_CA_KEY="${ROOT_DIR}/rootCA.key"
+ROOT_CA_KEY="${ROOT_DIR}/ca.key"
 
 # CA root certificate name
-ROOT_CA_CRT="${ROOT_DIR}/rootCA.crt.der"
-ROOT_CA_CRT_PEM="${ROOT_DIR}/rootCA.crt.pem"
+ROOT_CA_CRT="${ROOT_DIR}/ca.der"
+ROOT_CA_CRT_PEM="${ROOT_DIR}/ca.crt"
 
 # key long
 KEY_LENGTH=4096
@@ -112,7 +113,7 @@ then
     -x509 -days ${DAYS} -outform DER -out ${ROOT_CA_CRT} \
     -subj "/CN=root_ca_center"
 
-    # ...and uvicorn uses only PEM
+    # ...for server convert it to PEM
     openssl x509 -inform der -in ${ROOT_CA_CRT} -out ${ROOT_CA_CRT_PEM}
 fi
 
@@ -131,8 +132,8 @@ openssl req -sha256 -new -key ${SRV_KEY} -out ${SRV_CSR} \
 echo "Sign the CSR by own root CA certificate"
 if [[ ${SRV_NAME} =~ $regex ]]; then
     # srv_name is ip4
-    echo -e "authorityKeyIdentifier=keyid,issuer\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nsubjectAltName=${SRV_NAME}" > server.ext
-    openssl x509 ${SRV_CSR} -CA ${ROOT_CA_CRT} -CAkey ${ROOT_CA_KEY} \
+    echo -e "authorityKeyIdentifier=keyid,issuer\nbasicConstraints=CA:FALSE\nkeyUsage=digitalSignature,keyEncipherment\nsubjectAltName=IP:${SRV_NAME}" > server.ext
+    openssl x509 -req -in ${SRV_CSR} -CA ${ROOT_CA_CRT} -CAkey ${ROOT_CA_KEY} \
         -CAcreateserial -out ${SRV_CERT} -days ${DAYS} -extfile server.ext
 else
     openssl x509 -req -in ${SRV_CSR} -CA ${ROOT_CA_CRT} -CAkey ${ROOT_CA_KEY} \
