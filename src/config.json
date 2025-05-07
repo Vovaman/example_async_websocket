@@ -1,15 +1,13 @@
 {
     "wifi": {
-        "SSID": "<your wifi network name>",
-        "password": "<network password>",
+        "SSID": "Vovaman",
+        "password": "(*Byakovo73*)",
         "attempts": 3,
         "delay_in_msec": 200
     },
-    "server": "ws://<host IP>:<port>/",
+    "server": "wss://192.168.1.76:8443/",
     "ssl": {
-        "key": "<client key file name>",
-        "cert": "<client cert file name>",
-        "ca": "",
+        "ca": "ca.der",
         "cert_reqs": 2
     },
     "socket_delay_ms": 5
