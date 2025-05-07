@@ -42,7 +42,7 @@ Before running any examples:
 - Synchronize the project with the controller:
 
   ![sync project](pics/sync_project.png)
-- [install] the (https://github.com/Vovaman/micropython_async_websocket_client?tab=readme-ov-file#installation) ``async_websocket_client`` package.
+- install the [async_websocket_client package](https://github.com/Vovaman/micropython_async_websocket_client?tab=readme-ov-file#installation).
 
 If the connection between the server and controller is successful, the controller’s terminal will display:
 
