@@ -187,7 +187,7 @@ $ rm src/*.crt src/*.key src/ca.der
    $ python server.py --ssl --ssl-keyfile=tls/<host IP>/<host IP>.key --ssl-certfile=tls/<host IP>/<host IP>.crt --port=8443
    ```
 ### Certificates is optional
-This mode is realized also, but we will not check it.
+This mode is realized too, but we will not check it.
 
 ### Mutual Certificate Verification (Server and Controller)
 Most secure mode: enables client authentication via certificates.
