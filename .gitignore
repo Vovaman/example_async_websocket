@@ -129,3 +129,10 @@ dmypy.json
 .pyre/
 
 tls/
+
+ESP*.bin
+src/*.der
+src/*.pem
+src/*.crt
+src/*.key
+server.ext

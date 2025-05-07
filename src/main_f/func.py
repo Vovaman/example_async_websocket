@@ -1,11 +1,10 @@
 import network as net
-import uasyncio as a
+import asyncio as a
 import json
-from random import randint
 from machine import Pin
 import gc
 
-from async_websocket_client import AsyncWebsocketClient
+from ws import AsyncWebsocketClient
 
 # trying to read config --------------------------------------------------------
 # if config file format is wrong, exception is raised and program will stop
@@ -125,20 +124,22 @@ async def read_loop():
                 continue
         try:
             print("Handshaking...")
-            # connect to test socket server with random client number
-            if not await ws.handshake("{}{}".format(config["server"], randint(1, 100))):
+            # connect to test socket server
+            # if protocol is wss, get certificate from config
+            kw = {}
+            if config["server"].startswith("wss"):
+                ssl = config.get("ssl", {})
+                kw["keyfile"] = ssl.get("key")
+                kw["certfile"] = ssl.get("cert")
+                kw["cafile"] = ssl.get("ca")
+                kw["cert_reqs"] = ssl.get("cert_reqs")
+
+            if not await ws.handshake(config["server"], **kw):
                 raise Exception('Handshake error.')
             print("...handshaked.")
 
-            mes_count = 0
             while await ws.open():
                 data = await ws.recv()
-                print("Data: " + str(data) + "; " + str(mes_count))
-                # close socket for every 10 messages (even ping/pong)
-                if mes_count == 10:
-                    await ws.close()
-                    print("ws is open: " + str(await ws.open()))
-                mes_count += 1
 
                 if data is not None:
                     await lock.acquire()

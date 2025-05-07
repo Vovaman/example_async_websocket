@@ -1,176 +1,275 @@
 [Rus](README.rus.md)
 # example_async_websocket
-This project was created to test [micropython-async-websocket-client](https://pypi.org/project/micropython-async-websocket-client/) package.
+This project is designed to test the functionality of the [micropython-async-websocket-client](https://pypi.org/project/micropython-async-websocket-client/) package.
 
-It deals with [micropython](https://micropython.org), [ESP32S controller](https://ru.wikipedia.org/wiki/%D0%A4%D0%B0%D0%B9%D0%BB:ESP32_Espressif_ESP-WROOM-32_Dev_Board.jpg) and clones.
+The project demonstrates the operation of an [ESP32S controller](https://ru.wikipedia.org/wiki/%D0%A4%D0%B0%D0%B9%D0%BB:ESP32_Espressif_ESP-WROOM-32_Dev_Board.jpg) and its clones
+running [micropython](https://micropython.org).
 
-Main ideas of referenced above package are:
+Key objectives of the micropython-async-websocket-client package:
 
-1. Create and keep alive channel with server for data exchange.
-2. Problems with data exchange with server doesn't affect main cotrol loop.
-3. There is possibility to send control signals from server to controller.
+1. Establish and maintain a stable WebSocket connection with a server.
+2. Ensure that connection failures do not disrupt the controller’s main workflow.
+3. Enable bidirectional communication—sending data to the server and receiving control signals from it.
 
 # Requirements
 - ESP32 controller
 - USB cable with data wire
-- Ubuntu 22.04
+- Ubuntu 24.04
 - Python 3.10
-- VSCode
+- VSCode + PyMakr plugin
+
+> [!CAUTION]
+> 1. Use only the deb installation of VSCode!
+>    The snap version does not support the PyMakr plugin!
+> 2. The project https://github.com/Vovaman/start_ESP32_with_micropython
+>    explains how to work with ESP32 in VSCode.
+>    This includes PyMakr setup, file transfer to the controller, project synchronization, etc.
+> 3. All further steps assume that pipenv and pyenv are installed as described in the above project.
+> 4. All commands must be executed in the project’s root directory within the pipenv virtual environment.
+
 - WiFi network
 
-Project https://github.com/Vovaman/start_ESP32_with_micropython explains how to start.
+> [!CAUTION]
+> This guide assumes the ESP32 operates in a local Wi-Fi network.
+> Examples with TLS use self-signed certificates.
 
-> :warning: Use only deb-distributed version of VSCode!
+# Running Examples
+Before running any examples:
 
-# Project's components
+- Obtain the Wi-Fi network name (<wifi network name>)
+  and password (<wifi network pwd>) used by both the computer and the controller.
+- Determine the computer’s IP address (<host IP>) in the Wi-Fi network.
+- Synchronize the project with the controller:
+
+  ![sync project](pics/sync_project.png)
+- [install] the (https://github.com/Vovaman/micropython_async_websocket_client?tab=readme-ov-file#installation) ``async_websocket_client`` package.
+
+If the connection between the server and controller is successful, the controller’s terminal will display:
+
+![ESP echo](pics/esp_echo.png)
+
+...and the server’s console output will show:
+
+![Server echo](pics/server_echo.png)
+
+## WS. No Encryption
+The simplest case: unencrypted communication.
+
+1. ``src/config.json``:
+   ```json
+   {
+      "wifi": {
+         "SSID": "<wifi network name>",
+         "password": "<wifi network pwd>",
+         "attempts": 3,
+         "delay_in_msec": 200
+      },
+      "server": "ws://<host IP>:8000/",
+      "socket_delay_ms": 5
+   }
+   ```
+2. Update project on the controller:
+   ```bash
+   $ mpremote fs cp src/* :/
+   ```
+3. Reboot the controller.
+4. Start the server:
+   ```bash
+   $ python server.py
+   ```
+
+## WSS.
+### No Certificate Verification (Client or Server)
+
+> [!CAUTION]
+> TLS encrypts the channel even without certificates, but this is still insecure!
+
+1. src/config.json:
+   ```json
+   {
+      "wifi": {
+         "SSID": "<wifi network name>",
+         "password": "<wifi network pwd>",
+         "attempts": 3,
+         "delay_in_msec": 200
+      },
+      "server": "wss://<host IP>:8443/",
+      "ssl": {
+         "cert_reqs": 0
+      },
+      "socket_delay_ms": 5
+   }
+   ```
+2. Even though certificate checks are disabled,
+   the server must still use a certificate and key.
+
+   Generate certificates:
+   ```bash
+   $ ./gen_crt.sh --srv=<host IP>
+   ```
+
+> [!NOTE]
+> The gen_crt.sh script will prompt for a key password. Use the same password throughout.
+
+The script copies required files to the project directory. Since the controller does not need certificates here, delete unnecessary files:
+```bash
+$ rm src/*.crt src/*.key src/ca.der
+```
+3. Update the project on the controller:
+   ```bash
+   $ mpremote fs cp src/* :/
+   ```
+4. Reboot the controller.
+5. Start the server:
+   ```bash
+   $ python server.py --ssl --ssl-keyfile=tls/<host IP>/<host IP>.key --ssl-certfile=tls/<host IP>/<host IP>.crt --port=8443
+   ```
+
+> [!CAUTION]
+> The server does not require a CA certificate in this mode.
+
+### Server Certificate Verified by Controller, No Client Certificate Required
+> [!CAUTION]
+> Higher security: the controller verifies the server’s certificate,
+> but the server allows any client.
+>
+> Still insecure.
+
+1. ``src/config.json``:
+   ```json
+   {
+      "wifi": {
+         "SSID": "<wifi network name>",
+         "password": "<wifi network pwd>",
+         "attempts": 3,
+         "delay_in_msec": 200
+      },
+      "server": "wss://<host IP>:8443/",
+      "ssl": {
+         "cert_reqs": 2,
+         "ca": "ca.der"
+      },
+      "socket_delay_ms": 5
+   }
+   ```
+
+2. Generate certificates:
+   ```bash
+   $ ./gen_crt.sh --srv=<host IP>
+   ```
+
+   Remove unnecessary files:
+   ```bash
+   $ rm src/*.crt src/*.key
+   ```
+3. The controller lacks a real-time clock (RTC) and defaults to January 1, 2000.
+   If the system time is incorrect, certificate validation will fail with
+   ``The certificate validity starts in the future``.
+
+   Set the controller’s time via its console:
+
+   ```python
+   >>> from machine import RTC
+   >>> rtc = RTC()
+   >>> rtc.datetime((2025,5,7,1,13,0,0,0)) # replace with current time
+   ```
+4. Update the project on the controller:
+   ```bash
+   $ mpremote fs cp src/* :/
+   ```
+5. Reboot the controller.
+> [!CAUTION]
+> Time may reset after reboot.
+> If this occurs frequently,
+> add time-setting commands to the project code.
+6. Start the server:
+   ```bash
+   $ python server.py --ssl --ssl-keyfile=tls/<host IP>/<host IP>.key --ssl-certfile=tls/<host IP>/<host IP>.crt --port=8443
+   ```
+### Certificates is optional
+This mode is realized too, but we will not check it.
+
+### Mutual Certificate Verification (Server and Controller)
+Most secure mode: enables client authentication via certificates.
+
+1. Generate certificates with a client name:
+   ```bash
+   $ ./gen_crt.sh --srv=<host IP> --cn="ESP Client 1"
+   ```
+2. ``src/config.json``:
+   ```json
+   {
+      "wifi": {
+         "SSID": "<wifi network name>",
+         "password": "<wifi network pwd>",
+         "attempts": 3,
+         "delay_in_msec": 200
+      },
+      "server": "wss://<host IP>:8443/",
+      "ssl": {
+        "key": "ESP Client 1.key",
+        "cert": "ESP Client 1.crt",
+        "ca": "ca.der",
+        "cert_reqs": 2
+    },
+      "socket_delay_ms": 5
+   }
+   ```
+3. Set the controller’s time (as described earlier).
+4. Update the project on the controller.
+5. Reboot the controller.
+6. Start the server:
+   ```bash
+   $ python server.py --ssl --ssl-keyfile=tls/<host IP>/<host IP>.key --ssl-certfile=tls/<host IP>/<host IP>.crt --ssl-ca-cert=tls/ca/ca.crt --ssl-certs-reqs=2 --port=8443
+   ```
+
+The server extracts the client’s name from the certificate:
+
+![Client](pics/client.png)
+
+This allows certificate-based client authorization on the server.
+
+# Test project componenets
 ## Test server
-File `server.py` realizes simple websocket server. Server created with [FastAPI](https://fastapi.tiangolo.com/).
-Server has simple functionality: it provides only one command for clients `ws://<server>/<client_id>`.
-Where `client_id` is just random integer.
-If client with `client_id` is already connected then this request will be rejected.
-In other case a new websocket channel will be created with client `client_id`.
-When client send some message to server then it is broadcasted to all other clients.
-## ESP32 test project
-`src` folder contains files for test ESP32 project.
-Project's functionality consists of two independent tasks:
-- loop with LED blinking and sending SOS message to server
-- loop for reading data from server.
+The WebSocket server is implemented in ``server.py``.
+It accepts connections, echoes received messages.
+## Проект для ESP32
+The ``src`` folder contains files for the ESP32 project. Key functionalities:
+- Main loop: Blinks the onboard blue LED (if available) and sends SOS! to the server.
+- Data loop: Receives server messages.
 
-# Create project environment
-All the steps will be executed in VSCode.
-> :warning: How to work with ESP32 and VSCode
-> see https://github.com/Vovaman/start_ESP32_with_micropython.
-> Read this project before you continue.
+> [!NOTE]
+> Tested with [firmware v1.25.0](https://micropython.org/resources/firmware/ESP32_GENERIC-20250415-v1.25.0.bin).
 
-Open terminal and run inside project folder:
-```bash
-$ pipenv install
-```
-This command will create python-environment and install all necessary packages (see `Pipfile` for list).
-
-# Upload micropython
-Upload firmware with micropython to your controller or use
-`esp32-20220618-v1.19.1.bin` file in this project.
-
-# Start project
-
-> :warning: Pay attention: the connection will be rejected by client
-> every ten cycle to demonstrate re-handshaking.
-
-## WS protocol
-### Prepare config files
-1. Define IP address of your host by running the command in terminal:
-   ```bash
-   $ ip a
-   ```
-   Command will list parameters for all network drivers.
-   Find wifi driver in this list and IP address inside it configuration:
-   ![wifi](img/wifi.png)
-3. Open `src/config.json` and edit parameters for wifi network and `server` parameter: insert IP-address defined at previous step. Save the file.
-### Upload project to ESP32
-Upload project to your controller using `Pymakr`.
-> :warning: We will install `micropython-async-websocket-client`
-> at the next step, because `Pymakr` refresh file system on controller
-> while installing project.
-### Install micropython-async-websocket-client
-Install into controller `micropython-async-websocket-client` as explained in https://pypi.org/project/micropython-async-websocket-client/.
-Restart controller. It will start to blink blue LED.
-### Run test websocket server
-Open new terminal in VSCode, enter to project environment (if VSCode didn't do it for you) and run test server:
-```bash
-$ uvicorn server:app --reload --workers 1 --host 0.0.0.0 --port 8000 --ws-ping-interval 10 --ws-ping-timeout 10 --log-level info
-```
-> :warning: Pay attention for 8000 port!
-> This port is also in `src/config.json`, in `server` parameter.
-
-So, controller will immediatly connect to server using some random client id:
-![work](img/work.png)
-
-## WSS protocol
-> :warning: There is no certificates validation now.
-> So, this is why security is partial.
-> Waiting for new micropython's release.
-### Prepare config files
-1. Define IP address of your host by running the command in terminal:
-   ```bash
-   $ ip a
-   ```
-   Command will list parameters for all network drivers.
-   Find wifi driver in this list and IP address inside it configuration:
-   ![wifi](img/wifi.png)
-3. Open `src/config.json` and edit parameters for wifi network and `server` parameter: insert IP-address defined at previous step.
-`server` parameter has to be like `wss://<server_ip>:8443/`.
-Check for: `wss`, port number and slash at the end.
-Save the file.
-### Upload project to ESP32
-Upload project to your controller using `Pymakr`.
-> :warning: We will install `micropython-async-websocket-client`
-> at the next step, because `Pymakr` refresh file system on controller
-> while installing project.
-### Install micropython-async-websocket-client
-Install into controller `micropython-async-websocket-client` as explained in https://pypi.org/project/micropython-async-websocket-client/.
-Restart controller. It will start to blink blue LED.
-### Generate certificates
-Run `gen_crt.sh`. It will create `tls` folder with certificates.
-We need just two files: `server.key` and `server.crt`.
-### Run test websocket server
-Open new terminal in VSCode, enter to project environment (if VSCode didn't do it for you) and run test server:
-```bash
-$ uvicorn server:app --reload --workers 1 --host 0.0.0.0 --port 8443 --ws-ping-interval 10 --ws-ping-timeout 10 --log-level info --ssl-keyfile=./tls/server.key --ssl-certfile=./tls/server.crt
-```
-> :warning: Pay attention for 8443 port!
-> This port is also in `src/config.json`, in `server` parameter.
-
-So, controller will immediatly connect to server using some random client id:
-![work](img/work.png)
-
-# Postman
-Add one more client to our websocket server using [Postman](https://www.postman.com/).
-Install it and run. Create new websocket connection: run command `File --> New...` and choose `WebSocket Request`.
-
-> :warning: Don't forget to set correct protocol: `ws` or `wss`.
-
-![ws](img/postman_new_ws.png)
-
-Enter address in address field and press `Connect`:
-![ws](img/postman_addr.png)
-
-You'll see such result:
-![ws](img/postman_conn.png)
-
-So, let's send some message from Postman: write some text in message area and press `Send` button:
-![run](img/running.png)
-
-# Parameters
+# Configuration parameters
 ## src/config
 ```
 {
-    "wifi": {
-        "SSID": "SSID",                      # network name
-        "password": "***********",           # network password
-        "attempts": 3,                       # how many times during one cycle we will try to connect to wifi
-        "delay_in_msec": 200                 # delay after wifi.connect() command
-    },
-    "server": "ws://192.168.1.100:8000/",    # uri for test server
-    "socket_delay_ms": 5                     # delay for read/write operations on socket. if you have slow wifi network, try to increase this delay
+   "wifi": {
+      "SSID": "SSID",                      # network name
+      "password": "***********",           # network password
+      "attempts": 3,                       # connection attempts per cycle
+      "delay_in_msec": 200                 # post-connection delay (ms)
+   },
+   "server": "ws://192.168.1.100:8000/",    # server address
+   "socket_delay_ms": 5                     # Read/write delay (increase for slow networks)
+   "ssl": {
+      "ca": "<ca cert in DER-format file name>", # CA certificate (DER format)
+      "key": "<client key>", # client private key
+      "cert": "<client cet>", # client certificate
+      "cert_reqs": 2 # certificate check mode: 0 - CERT_NONE, 1 - CERT_OPTIONAL, 2 - CERT_REQUIRED
+   }
 }
 ```
-## uvicorn parameters for ping/pong
-Ping/pong is exchange of special messages between server and client to keep alive data channel.
-Parameters for ping/pong are initiated in command line for test server starting: `--ws-ping-interval 10 --ws-ping-timeout 10`.
-If you will decrease this parameters, delay for socket disconnection will be smaller, but ping/pong signal will be sent more quickly and
-workload of ESP32 can extremely increase.
-> :warning: Keep in mind: due to uvicorn parameters `--ws-ping-interval 10 --ws-ping-timeout 10`
-> websocket channel will be closed after 20 seconds approximately after
-> physical disconnection.
-
-In any case, you can configure your work environment to adopt it for your controller model and wifi parameters.
 
 # Conclusion
-All our components are running. ESP32 do his job and stand connected to server, server recieve messages and broadcast them to all clients.
-1. You may make some tests:
-   - poweroff ESP32,
-   - stop server,
-   - send many messages from Postman quickly,
-   - change src/config parameters to increase or decrease delays,
-   - change uvicorn parameters `--ws-ping-interval 10 --ws-ping-timeout 10`
+All components function correctly.
+The ESP32 maintains communication with the server, and the server echoes messages to clients.
+
+Test scenarios:
+- Power cycle the controller.
+- Stop/restart the server.
+- Send rapid bursts of messages.
+- Adjust ``socket_delay_ms`` in ``src/config.json``.
+- Experiment with TLS settings.
+- ...

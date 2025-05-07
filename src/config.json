@@ -1,10 +1,16 @@
 {
     "wifi": {
-        "SSID": "ssid",
-        "password": "password",
+        "SSID": "<network name>",
+        "password": "<network pwd>",
         "attempts": 3,
         "delay_in_msec": 200
     },
-    "server": "ws://<server>:8000/",
+    "server": "<host IP>",
+    "ssl": {
+        "ca": "<ca cert in DER-format file name>",
+        "key": "<client key>",
+        "cert": "<client cet>",
+        "cert_reqs": 2
+    },
     "socket_delay_ms": 5
 }

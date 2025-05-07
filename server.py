@@ -1,71 +1,61 @@
-
-# Test websocket server.
-# Created to test keepalive websocket connections with ESP32 controllers.
-
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, status
-from fastapi.exceptions import HTTPException
-import json
 import asyncio
+import ssl
+from websockets.asyncio.server import serve
+import argparse
 from datetime import datetime
-import logging
 
-app = FastAPI()
+async def handler(websocket):
+    ssl_object = websocket.transport.get_extra_info('ssl_object')
 
-@app.websocket("/{id}")
-async def websocket_endpoint(websocket: WebSocket, id: int):
+    if ssl_object:
+        client_cert = ssl_object.getpeercert()
+
+        # Extract Common Name (CN) from certificate
+        common_name = None
+        if client_cert:
+            # Parse subject
+            subject = client_cert.get('subject', [])
+            for item in subject:
+                for attr in item:
+                    if attr[0].lower() == 'commonname':
+                        common_name = attr[1]
+                        break
+                if common_name:
+                    break
+
+        print(f"New client: {common_name}")
+    else:
+        print("New anonymous client.")
 
     try:
-        if id in app.wss.keys():
-            await websocket.close(code=status.WS_1001_GOING_AWAY)
-            app.logger.info("Client {} already exists.".format(id))
-            return
-
-        await websocket.accept()
-        app.wss[id] = websocket
-
-        app.logger.info("New websocket client: {}; client: {}".format(id, websocket.headers.get("X-SSL-Client")))
-
-        while True:
-            data = await websocket.receive_text()
-            app.logger.info("Data from client {}: {}".format(id, data))
-
-            for client, ws in app.wss.items():
-                if client == id:
-                    continue
-                await ws.send_text("Mes from {}: {}".format(id, data))
-                app.logger.info("Data {} have been sent to {}.".format(data, client))
-
+        async for message in websocket:
+            print(f"{datetime.now()}: {message}")
+            await websocket.send(f"Echo: {message}")
     except Exception as ex:
-        app.logger.info("Client {} is disconnected: {}".format(id, ex))
-        app.wss.pop(id, None)
+        print("Connection is closed.")
 
+async def main():
+    parser = argparse.ArgumentParser(description="Args like --key=value")
+    parser.add_argument('--ssl', action="store_true", help="Switch TLS on.")
+    parser.add_argument('--ssl-keyfile', type=str, help="Server's secret key file.")
+    parser.add_argument('--ssl-certfile', type=str, help="Server's certificate file.")
+    parser.add_argument('--ssl-password', default=None, type=str, help="Pass phrase.")
+    parser.add_argument('--ssl-ca-cert', type=str, help="CA's certificate.")
+    parser.add_argument('--ssl-certs-reqs', type=int, default=0, help="Flag for certificate requires.")
+    parser.add_argument('--port', type=int, default=8000, help='Port number')
 
-@app.on_event("startup")
-async def startup():
-    app.wss = {}
+    args = parser.parse_args()
 
-    app.logger = logging.getLogger('ws_test')
-    app.logger.setLevel(logging.INFO)
+    ssl_context = None
+    if args.ssl:
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.verify_mode = args.ssl_certs_reqs
+        ssl_context.load_cert_chain(certfile=args.ssl_certfile, keyfile=args.ssl_keyfile, password=args.ssl_password)
+        if args.ssl_certs_reqs:
+            ssl_context.load_verify_locations(cafile=args.ssl_ca_cert)
 
-    # create console handler and set level to debug
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
+    async with serve(handler, "0.0.0.0", args.port, ssl=ssl_context) as server:
+        print(f"Server started on 0.0.0.0:{args.port}")
+        await server.serve_forever()
 
-    # create formatter
-    formatter = logging.Formatter('%(asctime)s: %(message)s')
-
-    # add formatter to ch
-    ch.setFormatter(formatter)
-
-    # add ch to logger
-    app.logger.addHandler(ch)
-
-    app.logger.info("Test websocket server started. Every message from client will be broadcasted to all other clients.")
-
-@app.on_event("shutdown")
-async def shutdown():
-    #for _, ws in app.wss.items():
-    #    await ws.send_text("Bye!")
-    #    await ws.close()
-
-    app.logger.info("Server stopped.")
+asyncio.run(main())
