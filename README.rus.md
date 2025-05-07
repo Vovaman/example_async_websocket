@@ -19,7 +19,7 @@
 - Python 3.10
 - VSCode + PyMakr plugin
 
-> [!CA~UTION]
+> [!CAUTION]
 > 1. Используйте только  deb-установку VSCode!
 >    В версии для `snap` не работает расширение `PyMakr`!
 > 2. Проект https://github.com/Vovaman/start_ESP32_with_micropython объясняет,
