@@ -2,6 +2,7 @@
 # example_async_websocket
 Этот проект создан для тестирования работы пакета
 [micropython-async-websocket-client](https://pypi.org/project/micropython-async-websocket-client/).
+
 В проекте рассматривается работа контроллера
 [ESP32S controller](https://ru.wikipedia.org/wiki/%D0%A4%D0%B0%D0%B9%D0%BB:ESP32_Espressif_ESP-WROOM-32_Dev_Board.jpg)
 и клонов под управлением [micropython](https://micropython.org).
@@ -25,6 +26,7 @@
 > [!NOTE]
 > Проект https://github.com/Vovaman/start_ESP32_with_micropython объясняет,
 > как работать с ESP32 из VSCode.
+>
 > Установка плагина PyMakr, копирование файлов на контроллер, синхронизация проекта и т.д. - все операции описаны в указанном проекте.
 
 > [!NOTE]
@@ -35,11 +37,11 @@
 >    ```bash
 >    $ pipenv install
 >    ```
-
-     Вход в виртуальную среду - команда
-     ```bash
-     $ pipenv shell
-     ```
+>
+>    Вход в виртуальную среду - команда
+>    ```bash
+>    $ pipenv shell
+>    ```
 
 - сеть WiFi
 
