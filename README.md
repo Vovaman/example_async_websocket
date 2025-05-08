@@ -233,9 +233,9 @@ This allows certificate-based client authorization on the server.
 ## Test server
 The WebSocket server is implemented in ``server.py``.
 It accepts connections, echoes received messages.
-## Проект для ESP32
+## Project for ESP32
 The ``src`` folder contains files for the ESP32 project. Key functionalities:
-- Main loop: Blinks the onboard blue LED (if available) and sends SOS! to the server.
+- Main loop: Blinks the onboard blue LED (if available) and sends ``SOS!`` to the server.
 - Data loop: Receives server messages.
 
 > [!NOTE]
