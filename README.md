@@ -42,7 +42,7 @@ Before running any examples:
 - Synchronize the project with the controller:
 
   ![sync project](pics/sync_project.png)
-- [install] the (https://github.com/Vovaman/micropython_async_websocket_client?tab=readme-ov-file#installation) ``async_websocket_client`` package.
+- install the [async_websocket_client package](https://github.com/Vovaman/micropython_async_websocket_client?tab=readme-ov-file#installation).
 
 If the connection between the server and controller is successful, the controller’s terminal will display:
 
@@ -233,9 +233,9 @@ This allows certificate-based client authorization on the server.
 ## Test server
 The WebSocket server is implemented in ``server.py``.
 It accepts connections, echoes received messages.
-## Проект для ESP32
+## Project for ESP32
 The ``src`` folder contains files for the ESP32 project. Key functionalities:
-- Main loop: Blinks the onboard blue LED (if available) and sends SOS! to the server.
+- Main loop: Blinks the onboard blue LED (if available) and sends ``SOS!`` to the server.
 - Data loop: Receives server messages.
 
 > [!NOTE]
