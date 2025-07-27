@@ -122,22 +122,30 @@ async def read_loop():
             if not wifi.isconnected():
                 await a.sleep_ms(config["wifi"]["delay_in_msec"])
                 continue
+        print("Handshaking...")
+        # connect to test socket server
+        # if protocol is wss, get certificate from config
+        kw = {}
+        if config["server"].startswith("wss"):
+            ssl = config.get("ssl", {})
+            kw["keyfile"] = ssl.get("key")
+            kw["certfile"] = ssl.get("cert")
+            kw["cafile"] = ssl.get("ca")
+            kw["cert_reqs"] = ssl.get("cert_reqs")
+
+        handshaked = False
+        while not handshaked:
+            try:
+                print("...handshaking...")
+                if await ws.handshake(config["server"], **kw):
+                    handshaked = True
+                    print("handshaked!")
+            except OSError as ex:
+                print("Exception: ", ex)
+                gc.collect()
+                a.sleep_ms(1000)
+
         try:
-            print("Handshaking...")
-            # connect to test socket server
-            # if protocol is wss, get certificate from config
-            kw = {}
-            if config["server"].startswith("wss"):
-                ssl = config.get("ssl", {})
-                kw["keyfile"] = ssl.get("key")
-                kw["certfile"] = ssl.get("cert")
-                kw["cafile"] = ssl.get("ca")
-                kw["cert_reqs"] = ssl.get("cert_reqs")
-
-            if not await ws.handshake(config["server"], **kw):
-                raise Exception('Handshake error.')
-            print("...handshaked.")
-
             while await ws.open():
                 data = await ws.recv()
 
